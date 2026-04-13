@@ -1,0 +1,289 @@
+(flwr_env) PS C:\Users\User\OneDrive\Documents\Personal\TIINFO\PFE\Phase 1 and 2 work> python fl_training_BICNNLSTM.py
+=======================================================
+  DATA LOADED
+=======================================================
+  Train:    (36044, 17)
+  Test:     (9011, 17)
+  Features: 17  |  Classes: 8
+  FL nodes: 12
+  AE benign train: (21888, 17)
+  Classes: ['benign', 'bruteforce', 'ddos', 'dos', 'malware', 'mitm', 'recon', 'web']
+=======================================================
+
+=======================================================
+  PART 2 — RANDOM FOREST CENTRALIZED BASELINE (FR10)
+=======================================================
+Training Random Forest on full training set ...
+=======================================================
+  RANDOM FOREST RESULTS (centralized, all data)
+=======================================================
+  Accuracy      : 0.9525
+  Macro F1      : 0.9324  <- FR10 reference
+  Weighted F1   : 0.9521
+  ROC-AUC (OvR) : 0.9825
+
+  Per-class F1 and FPR:
+  Class                 F1      FPR
+  ----------------------------------
+  benign            0.9666   0.0754
+  bruteforce        0.8611   0.0008
+  ddos              0.9482   0.0018
+  dos               0.9708   0.0024
+  malware           0.9361   0.0011
+  mitm              0.9168   0.0020
+  recon             0.9000   0.0114
+  web               0.9593   0.0004
+
+              precision    recall  f1-score   support
+
+      benign     0.9526    0.9810    0.9666      5472
+  bruteforce     0.8986    0.8267    0.8611        75
+        ddos     0.9774    0.9207    0.9482       706
+         dos     0.9721    0.9694    0.9708       720
+       recon     0.9287    0.8729    0.9000      1314
+         web     0.9636    0.9550    0.9593       111
+
+    accuracy                         0.9525      9011
+   macro avg     0.9501    0.9159    0.9324      9011
+weighted avg     0.9524    0.9525    0.9521      9011
+
+Top 10 RF feature importances:
+   1. feature_12                     0.1546
+   2. feature_10                     0.1124
+   3. feature_5                      0.1082
+   4. feature_14                     0.0959
+   5. feature_9                      0.0914
+   6. feature_13                     0.0875
+   7. feature_4                      0.0793
+   8. feature_8                      0.0648
+   9. feature_7                      0.0637
+  10. feature_6                      0.0510
+
+Saved RF model -> models\rf_centralized.pkl
+WARNING:tensorflow:From C:\Users\User\OneDrive\Documents\Personal\TIINFO\PFE\Phase 1 and 2 work\flwr_env\Lib\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+
+WARNING:tensorflow:From C:\Users\User\OneDrive\Documents\Personal\TIINFO\PFE\Phase 1 and 2 work\flwr_env\Lib\site-packages\keras\src\backend.py:1398: The name tf.executing_eagerly_outside_functions is deprecated. Please use tf.compat.v1.executing_eagerly_outside_functions instead.
+
+Model: "FL_BiCNN_LSTM_IDS"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ features (InputLayer)       [(None, 17)]              0
+
+ reshape_to_sequence (Resha  (None, 1, 17)             0
+ pe)
+
+ conv1d (Conv1D)             (None, 1, 64)             1152      
+
+ bn_conv (BatchNormalizatio  (None, 1, 64)             256
+ n)
+
+ bidirectional_lstm (Bidire  (None, 128)               66048
+ ctional)
+
+ dense (Dense)               (None, 64)                8256
+
+ dropout (Dropout)           (None, 64)                0
+
+ output (Dense)              (None, 8)                 520
+
+=================================================================
+Total params: 76232 (297.78 KB)
+Trainable params: 76104 (297.28 KB)
+Non-trainable params: 128 (512.00 Byte)
+_________________________________________________________________
+
+Total parameters: 76,232
+All layers produce weight tensors -> compatible with FedAvg
+
+FL client partitions (12 nodes):
+  Client 01: 30,025 samples | classes: ['benign', 'dos', 'recon']
+  Client 02: 28,407 samples | classes: ['benign', 'mitm', 'recon']
+  Client 03: 26,030 samples | classes: ['benign', 'dos', 'mitm']
+  Client 04: 25,960 samples | classes: ['benign', 'dos', 'malware']
+  Client 05: 23,447 samples | classes: ['benign', 'bruteforce', 'mitm']
+  Client 06: 30,025 samples | classes: ['benign', 'dos', 'recon']
+  Client 07: 30,025 samples | classes: ['benign', 'dos', 'recon']
+  Client 08: 25,960 samples | classes: ['benign', 'dos', 'malware']
+  Client 09: 25,156 samples | classes: ['benign', 'ddos', 'web']
+  Client 10: 25,972 samples | classes: ['benign', 'ddos', 'mitm']
+  Client 11: 23,377 samples | classes: ['benign', 'bruteforce', 'malware']
+  Client 12: 30,710 samples | classes: ['benign', 'bruteforce', 'ddos', 'recon', 'web']
+
+=======================================================
+  STARTING FL SIMULATION — BiCNN-LSTM + FedAvg
+  Rounds: 20 | Nodes: 12 | Local epochs: 5
+=======================================================
+INFO flwr 2026-04-13 00:45:33,250 | app.py:178 | Starting Flower simulation, config: ServerConfig(num_rounds=20, round_timeout=None)
+2026-04-13 00:45:35,701 INFO worker.py:1752 -- Started a local Ray instance.
+INFO flwr 2026-04-13 00:45:37,291 | app.py:213 | Flower VCE: Ray initialized with resources: {'GPU': 1.0, 'memory': 2126086964.0, 'object_store_memory': 1063043481.0, 'node:127.0.0.1': 1.0, 'accelerator_type:G': 1.0, 'CPU': 12.0, 'node:__internal_head__': 1.0}
+INFO flwr 2026-04-13 00:45:37,291 | app.py:219 | Optimize your simulation with Flower VCE: https://flower.dev/docs/framework/how-to-run-simulations.html        
+INFO flwr 2026-04-13 00:45:37,292 | app.py:242 | Flower VCE: Resources for each Virtual Client: {'num_cpus': 1, 'num_gpus': 0.0}
+INFO flwr 2026-04-13 00:45:37,303 | app.py:288 | Flower VCE: Creating VirtualClientEngineActorPool with 12 actors
+INFO flwr 2026-04-13 00:45:37,303 | server.py:89 | Initializing global parameters
+INFO flwr 2026-04-13 00:45:37,303 | server.py:276 | Requesting initial parameters from one random client
+INFO flwr 2026-04-13 00:45:53,050 | server.py:280 | Received initial parameters from one random client
+INFO flwr 2026-04-13 00:45:53,051 | server.py:91 | Evaluating initial parameters
+INFO flwr 2026-04-13 00:45:53,051 | server.py:104 | FL starting
+DEBUG flwr 2026-04-13 00:45:53,051 | server.py:222 | fit_round 1: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:46:26,518 | server.py:236 | fit_round 1 received 12 results and 0 failures
+WARNING flwr 2026-04-13 00:46:26,570 | fedavg.py:250 | No fit_metrics_aggregation_fn provided
+WARNING:tensorflow:From C:\Users\User\OneDrive\Documents\Personal\TIINFO\PFE\Phase 1 and 2 work\flwr_env\Lib\site-packages\keras\src\utils\tf_utils.py:492: The name tf.ragged.RaggedTensorValue is deprecated. Please use tf.compat.v1.ragged.RaggedTensorValue instead.
+
+WARNING:tensorflow:From C:\Users\User\OneDrive\Documents\Personal\TIINFO\PFE\Phase 1 and 2 work\flwr_env\Lib\site-packages\keras\src\engine\base_layer_utils.py:384: The name tf.executing_eagerly_outside_functions is deprecated. Please use tf.compat.v1.executing_eagerly_outside_functions instead.
+
+  Round 01/20 | Loss: 0.8657 | Acc: 70.35% | Macro F1: 0.2131
+           ^ New best F1: 0.2131 — checkpoint saved
+DEBUG flwr 2026-04-13 00:46:31,247 | server.py:173 | evaluate_round 1: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:46:38,609 | server.py:187 | evaluate_round 1 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:46:38,617 | server.py:222 | fit_round 2: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:47:04,008 | server.py:236 | fit_round 2 received 12 results and 0 failures
+  Round 02/20 | Loss: 1.0455 | Acc: 78.26% | Macro F1: 0.2849
+           ^ New best F1: 0.2849 — checkpoint saved
+DEBUG flwr 2026-04-13 00:47:04,849 | server.py:173 | evaluate_round 2: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:47:13,216 | server.py:187 | evaluate_round 2 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:47:13,216 | server.py:222 | fit_round 3: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:47:38,512 | server.py:236 | fit_round 3 received 12 results and 0 failures
+  Round 03/20 | Loss: 1.1465 | Acc: 78.55% | Macro F1: 0.2861
+           ^ New best F1: 0.2861 — checkpoint saved
+DEBUG flwr 2026-04-13 00:47:39,333 | server.py:173 | evaluate_round 3: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:47:47,431 | server.py:187 | evaluate_round 3 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:47:47,434 | server.py:222 | fit_round 4: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:48:11,855 | server.py:236 | fit_round 4 received 12 results and 0 failures
+  Round 04/20 | Loss: 1.1362 | Acc: 78.90% | Macro F1: 0.2890
+           ^ New best F1: 0.2890 — checkpoint saved
+DEBUG flwr 2026-04-13 00:48:12,687 | server.py:173 | evaluate_round 4: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:48:20,225 | server.py:187 | evaluate_round 4 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:48:20,227 | server.py:222 | fit_round 5: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:48:44,458 | server.py:236 | fit_round 5 received 12 results and 0 failures
+  Round 05/20 | Loss: 1.0644 | Acc: 79.06% | Macro F1: 0.2925
+           ^ New best F1: 0.2925 — checkpoint saved
+DEBUG flwr 2026-04-13 00:48:45,304 | server.py:173 | evaluate_round 5: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:48:52,625 | server.py:187 | evaluate_round 5 received 12 results and 0 failures
+  Round 04/20 | Loss: 1.1362 | Acc: 78.90% | Macro F1: 0.2890
+           ^ New best F1: 0.2890 — checkpoint saved
+DEBUG flwr 2026-04-13 00:48:12,687 | server.py:173 | evaluate_round 4: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:48:20,225 | server.py:187 | evaluate_round 4 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:48:20,227 | server.py:222 | fit_round 5: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:48:44,458 | server.py:236 | fit_round 5 received 12 results and 0 failures
+  Round 05/20 | Loss: 1.0644 | Acc: 79.06% | Macro F1: 0.2925
+           ^ New best F1: 0.2925 — checkpoint saved
+DEBUG flwr 2026-04-13 00:48:45,304 | server.py:173 | evaluate_round 5: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:48:52,625 | server.py:187 | evaluate_round 5 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:48:52,625 | server.py:222 | fit_round 6: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:16,439 | server.py:236 | fit_round 6 received 12 results and 0 failures
+  Round 06/20 | Loss: 1.0102 | Acc: 79.31% | Macro F1: 0.2986
+           ^ New best F1: 0.2986 — checkpoint saved
+DEBUG flwr 2026-04-13 00:49:17,255 | server.py:173 | evaluate_round 6: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:24,756 | server.py:187 | evaluate_round 6 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:24,760 | server.py:222 | fit_round 7: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:49,096 | server.py:236 | fit_round 7 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:16,439 | server.py:236 | fit_round 6 received 12 results and 0 failures
+  Round 06/20 | Loss: 1.0102 | Acc: 79.31% | Macro F1: 0.2986
+           ^ New best F1: 0.2986 — checkpoint saved
+DEBUG flwr 2026-04-13 00:49:17,255 | server.py:173 | evaluate_round 6: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:24,756 | server.py:187 | evaluate_round 6 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:24,760 | server.py:222 | fit_round 7: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:49,096 | server.py:236 | fit_round 7 received 12 results and 0 failures
+  Round 06/20 | Loss: 1.0102 | Acc: 79.31% | Macro F1: 0.2986
+           ^ New best F1: 0.2986 — checkpoint saved
+DEBUG flwr 2026-04-13 00:49:17,255 | server.py:173 | evaluate_round 6: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:24,756 | server.py:187 | evaluate_round 6 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:24,760 | server.py:222 | fit_round 7: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:49,096 | server.py:236 | fit_round 7 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:17,255 | server.py:173 | evaluate_round 6: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:24,756 | server.py:187 | evaluate_round 6 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:24,760 | server.py:222 | fit_round 7: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:49,096 | server.py:236 | fit_round 7 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:24,760 | server.py:222 | fit_round 7: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:49,096 | server.py:236 | fit_round 7 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:49,096 | server.py:236 | fit_round 7 received 12 results and 0 failures
+  Round 07/20 | Loss: 0.9744 | Acc: 79.39% | Macro F1: 0.3034
+           ^ New best F1: 0.3034 — checkpoint saved
+DEBUG flwr 2026-04-13 00:49:49,903 | server.py:173 | evaluate_round 7: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:49:56,948 | server.py:187 | evaluate_round 7 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:49:56,948 | server.py:222 | fit_round 8: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:50:25,375 | server.py:236 | fit_round 8 received 12 results and 0 failures
+  Round 08/20 | Loss: 0.9406 | Acc: 79.49% | Macro F1: 0.3071
+           ^ New best F1: 0.3071 — checkpoint saved
+DEBUG flwr 2026-04-13 00:50:26,158 | server.py:173 | evaluate_round 8: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:50:33,275 | server.py:187 | evaluate_round 8 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:50:33,275 | server.py:222 | fit_round 9: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:50:57,193 | server.py:236 | fit_round 9 received 12 results and 0 failures
+  Round 09/20 | Loss: 0.8894 | Acc: 79.94% | Macro F1: 0.3328
+           ^ New best F1: 0.3328 — checkpoint saved
+DEBUG flwr 2026-04-13 00:50:58,054 | server.py:173 | evaluate_round 9: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:51:05,502 | server.py:187 | evaluate_round 9 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:51:05,502 | server.py:222 | fit_round 10: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:51:33,705 | server.py:236 | fit_round 10 received 12 results and 0 failures
+  Round 10/20 | Loss: 0.8564 | Acc: 80.15% | Macro F1: 0.3385
+           ^ New best F1: 0.3385 — checkpoint saved
+DEBUG flwr 2026-04-13 00:51:38,224 | server.py:173 | evaluate_round 10: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:51:45,453 | server.py:187 | evaluate_round 10 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:51:45,453 | server.py:222 | fit_round 11: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:52:10,192 | server.py:236 | fit_round 11 received 12 results and 0 failures
+  Round 11/20 | Loss: 0.8513 | Acc: 80.19% | Macro F1: 0.3391
+           ^ New best F1: 0.3391 — checkpoint saved
+DEBUG flwr 2026-04-13 00:52:11,873 | server.py:173 | evaluate_round 11: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:52:19,334 | server.py:187 | evaluate_round 11 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:52:19,335 | server.py:222 | fit_round 12: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:52:44,556 | server.py:236 | fit_round 12 received 12 results and 0 failures
+  Round 12/20 | Loss: 0.8605 | Acc: 80.35% | Macro F1: 0.3499
+           ^ New best F1: 0.3499 — checkpoint saved
+DEBUG flwr 2026-04-13 00:52:45,449 | server.py:173 | evaluate_round 12: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:52:53,114 | server.py:187 | evaluate_round 12 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:52:53,114 | server.py:222 | fit_round 13: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:53:22,509 | server.py:236 | fit_round 13 received 12 results and 0 failures
+  Round 13/20 | Loss: 0.8422 | Acc: 80.29% | Macro F1: 0.3408
+DEBUG flwr 2026-04-13 00:53:23,334 | server.py:173 | evaluate_round 13: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:53:31,494 | server.py:187 | evaluate_round 13 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:53:31,495 | server.py:222 | fit_round 14: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:54:01,439 | server.py:236 | fit_round 14 received 12 results and 0 failures
+  Round 14/20 | Loss: 0.8028 | Acc: 80.62% | Macro F1: 0.3553
+           ^ New best F1: 0.3553 — checkpoint saved
+DEBUG flwr 2026-04-13 00:54:02,268 | server.py:173 | evaluate_round 14: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:54:10,853 | server.py:187 | evaluate_round 14 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:54:10,853 | server.py:222 | fit_round 15: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:54:38,198 | server.py:236 | fit_round 15 received 12 results and 0 failures
+  Round 15/20 | Loss: 0.7525 | Acc: 80.67% | Macro F1: 0.3563
+           ^ New best F1: 0.3563 — checkpoint saved
+DEBUG flwr 2026-04-13 00:54:38,997 | server.py:173 | evaluate_round 15: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:54:47,025 | server.py:187 | evaluate_round 15 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:54:47,026 | server.py:222 | fit_round 16: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:55:12,575 | server.py:236 | fit_round 16 received 12 results and 0 failures
+  Round 16/20 | Loss: 0.7600 | Acc: 80.49% | Macro F1: 0.3514
+DEBUG flwr 2026-04-13 00:55:13,631 | server.py:173 | evaluate_round 16: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:55:21,696 | server.py:187 | evaluate_round 16 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:55:21,696 | server.py:222 | fit_round 17: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:55:47,387 | server.py:236 | fit_round 17 received 12 results and 0 failures
+  Round 17/20 | Loss: 0.7402 | Acc: 80.45% | Macro F1: 0.3512
+DEBUG flwr 2026-04-13 00:55:48,199 | server.py:173 | evaluate_round 17: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:55:56,766 | server.py:187 | evaluate_round 17 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:55:56,766 | server.py:222 | fit_round 18: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:56:23,031 | server.py:236 | fit_round 18 received 12 results and 0 failures
+  Round 18/20 | Loss: 0.7113 | Acc: 80.65% | Macro F1: 0.3583
+           ^ New best F1: 0.3583 — checkpoint saved
+DEBUG flwr 2026-04-13 00:56:23,841 | server.py:173 | evaluate_round 18: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:56:32,235 | server.py:187 | evaluate_round 18 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:56:32,236 | server.py:222 | fit_round 19: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:56:59,100 | server.py:236 | fit_round 19 received 12 results and 0 failures
+  Round 19/20 | Loss: 0.7234 | Acc: 80.65% | Macro F1: 0.3752
+           ^ New best F1: 0.3752 — checkpoint saved
+DEBUG flwr 2026-04-13 00:57:02,939 | server.py:173 | evaluate_round 19: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:57:11,977 | server.py:187 | evaluate_round 19 received 12 results and 0 failures
+DEBUG flwr 2026-04-13 00:57:11,978 | server.py:222 | fit_round 20: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:57:41,709 | server.py:236 | fit_round 20 received 12 results and 0 failures
+  Round 20/20 | Loss: 0.7360 | Acc: 80.73% | Macro F1: 0.3737
+DEBUG flwr 2026-04-13 00:57:42,825 | server.py:173 | evaluate_round 20: strategy sampled 12 clients (out of 12)
+DEBUG flwr 2026-04-13 00:57:57,280 | server.py:187 | evaluate_round 20 received 12 results and 0 failures
+INFO flwr 2026-04-13 00:57:57,280 | server.py:153 | FL finished in 724.2288610000396
+INFO flwr 2026-04-13 00:57:57,403 | app.py:226 | app_fit: losses_distributed [(1, 0.45291527133700105), (2, 0.42616649638313375), (3, 0.4502144739362456), (4, 0.4391767916480958), (5, 0.4135685271908083), (6, 0.3934563416905725), (7, 0.37871251037972287), (8, 0.3685627444101541), (9, 0.3520699862799366), (10, 0.3414337027917453), (11, 0.3414842049461887), (12, 0.34183739926963846), (13, 0.3412861595677437), (14, 0.3319068310402363), (15, 0.31526685205684035), (16, 0.31945225403149274), (17, 0.31282361834003547), (18, 0.30235655640087844), (19, 0.3070483252768137), (20, 0.3124776823928114)]
+INFO flwr 2026-04-13 00:57:57,776 | app.py:227 | app_fit: metrics_distributed_fit {}
+INFO flwr 2026-04-13 00:57:57,777 | app.py:228 | app_fit: metrics_distributed {'accuracy': [(1, 0.8687087429628286), (2, 0.9124007119115874), (3, 0.9136834251717615), (4, 0.9158182041471179), (5, 0.9166148854016171), (6, 0.9180267859667809), (7, 0.9186604462709156), (8, 0.919097240395702), (9, 0.921072071384694), (10, 0.9222747964425638), (11, 0.9223024730937311), (12, 0.9229791914807203), (13, 0.9224778056928334), (14, 0.9238374184705028), (15, 0.9238128036918266), (16, 0.9233760114265341), (17, 0.9233513973330215), (18, 0.9244157131307417), (19, 0.9245941232740074), (20, 0.9245079893008303)]}
+INFO flwr 2026-04-13 00:57:57,777 | app.py:229 | app_fit: losses_centralized []
+INFO flwr 2026-04-13 00:57:57,777 | app.py:230 | app_fit: metrics_centralized {}
+
+FL simulation complete.
+  Best Macro F1 achieved: 0.3752
+  Paper reference value:  0.9551 (Table 8, Firouzi et al. 2025)
+  Best weights restored from checkpoint.

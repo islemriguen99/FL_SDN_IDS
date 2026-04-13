@@ -1,0 +1,116 @@
+<style>
+.mc { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; text-align: center; }
+.ml { font-size: 12px; color: var(--color-text-secondary); margin: 0 0 4px; }
+.mv { font-size: 21px; font-weight: 500; color: var(--color-text-primary); margin: 0; }
+.ms { font-size: 11px; color: var(--color-text-tertiary); margin: 4px 0 0; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; font-size: 12px; color: var(--color-text-secondary); }
+.leg { display: flex; align-items: center; gap: 4px; }
+.lsq { width: 10px; height: 3px; display: inline-block; }
+.sec { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin: 1.5rem 0 0.5rem; letter-spacing: 0.02em; }
+</style>
+
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:1.5rem;">
+  <div class="mc"><p class="ml">Best FL Macro F1</p><p class="mv" style="color:#1D9E75;">0.8338</p><p class="ms">Round 44 checkpoint</p></div>
+  <div class="mc"><p class="ml">RF baseline F1</p><p class="mv" style="color:#BA7517;">0.9324</p><p class="ms">Centralized ceiling</p></div>
+  <div class="mc"><p class="ml">Privacy-accuracy gap</p><p class="mv" style="color:#E24B4A;">9.86%</p><p class="ms">FL vs RF Macro F1</p></div>
+  <div class="mc"><p class="ml">Client accuracy (R50)</p><p class="mv" style="color:#378ADD;">95.0%</p><p class="ms">Federated, local eval</p></div>
+</div>
+
+<p class="sec">Convergence — Macro F1 across 50 rounds</p>
+<div class="legend-row">
+  <span class="leg"><span class="lsq" style="background:#1D9E75;height:2px;"></span>FL Macro F1 (server eval)</span>
+  <span class="leg"><span class="lsq" style="background:#BA7517;height:2px;border-top:2px dashed #BA7517;height:0;"></span>RF centralized F1 = 0.932</span>
+  <span class="leg"><span class="lsq" style="background:#378ADD;height:2px;border-top:2px dashed #378ADD;height:0;"></span>Paper target = 0.955</span>
+  <span class="leg"><span class="lsq" style="background:#888780;height:2px;border-top:2px dotted #888780;height:0;"></span>Best = 0.834 (R44)</span>
+</div>
+<div style="position:relative;width:100%;height:280px;">
+  <canvas id="c1" role="img" aria-label="FL Macro F1 convergence over 50 rounds, reaching best of 0.834 at round 44">FL Macro F1 rising from 0.27 to 0.83 over 50 rounds with plateau from round 28 onward.</canvas>
+</div>
+
+<p class="sec">Two-phase convergence breakdown</p>
+<div style="position:relative;width:100%;height:220px;">
+  <canvas id="c2" role="img" aria-label="Phase analysis showing fast learning phase rounds 1-22 and plateau phase rounds 22-50">Phase 1 fast learning then Phase 2 plateau oscillation.</canvas>
+</div>
+
+<p class="sec">Client accuracy vs server Macro F1 — the divergence gap</p>
+<div class="legend-row">
+  <span class="leg"><span class="lsq" style="background:#378ADD;height:2px;"></span>Client avg accuracy (local eval)</span>
+  <span class="leg"><span class="lsq" style="background:#1D9E75;height:2px;"></span>Server Macro F1 (global eval)</span>
+</div>
+<div style="position:relative;width:100%;height:220px;">
+  <canvas id="c3" role="img" aria-label="Client accuracy near 95% while server Macro F1 plateaus at 83%, showing a persistent 12-point gap">Client accuracy reaches 95% while Macro F1 plateaus at 83%.</canvas>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const f1 = [0.2651,0.5180,0.5658,0.5929,0.6036,0.6131,0.6250,0.6662,0.6860,0.7004,
+             0.7207,0.7361,0.7497,0.7533,0.7586,0.7628,0.7695,0.7720,0.7721,0.7762,
+             0.7791,0.7972,0.7773,0.7894,0.7906,0.7980,0.7961,0.8056,0.8025,0.8192,
+             0.7874,0.7998,0.8032,0.8032,0.8038,0.8111,0.7970,0.7974,0.8038,0.8028,
+             0.8056,0.8118,0.8087,0.8338,0.8238,0.8164,0.8213,0.8117,0.8015,0.8044];
+
+const clientAcc = [0.8489,0.8928,0.9045,0.9065,0.9079,0.9095,0.9117,0.9166,0.9216,0.9250,
+                   0.9282,0.9308,0.9336,0.9358,0.9366,0.9368,0.9387,0.9390,0.9393,0.9408,
+                   0.9418,0.9437,0.9415,0.9439,0.9442,0.9453,0.9452,0.9472,0.9451,0.9474,
+                   0.9454,0.9470,0.9477,0.9475,0.9474,0.9480,0.9483,0.9480,0.9475,0.9477,
+                   0.9477,0.9497,0.9493,0.9522,0.9513,0.9500,0.9516,0.9510,0.9484,0.9501];
+
+const rounds = Array.from({length:50},(_,i)=>i+1);
+const defOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} };
+
+const gridColor = 'rgba(136,135,128,0.12)';
+const tickColor = '#888780';
+
+new Chart(document.getElementById('c1'),{
+  type:'line',
+  data:{datasets:[
+    {data:f1.map((y,i)=>({x:i+1,y})),borderColor:'#1D9E75',borderWidth:2,pointRadius:2,pointBackgroundColor:'#1D9E75',tension:0.25,parsing:false},
+    {data:[{x:1,y:0.9324},{x:50,y:0.9324}],borderColor:'#BA7517',borderWidth:1.5,borderDash:[5,3],pointRadius:0,parsing:false},
+    {data:[{x:1,y:0.9551},{x:50,y:0.9551}],borderColor:'#378ADD',borderWidth:1.5,borderDash:[2,3],pointRadius:0,parsing:false},
+    {data:[{x:1,y:0.8338},{x:50,y:0.8338}],borderColor:'#888780',borderWidth:1,borderDash:[3,3],pointRadius:0,parsing:false},
+    {data:[{x:22,y:0.25},{x:22,y:1.0}],borderColor:'rgba(136,135,128,0.3)',borderWidth:1,pointRadius:0,parsing:false},
+  ]},
+  options:{...defOpts,scales:{
+    x:{type:'linear',min:1,max:50,ticks:{color:tickColor,stepSize:5},grid:{color:gridColor},title:{display:true,text:'Round',color:tickColor,font:{size:11}}},
+    y:{min:0.2,max:1.0,ticks:{color:tickColor,callback:v=>v.toFixed(2)},grid:{color:gridColor},title:{display:true,text:'Macro F1',color:tickColor,font:{size:11}}}
+  }}
+});
+
+const phaseF1 = f1.map((y,i)=>({x:i+1,y:(y*100)}));
+const movAvg = [];
+for(let i=0;i<f1.length;i++){
+  const start = Math.max(0,i-2);
+  const slice = f1.slice(start,i+3);
+  movAvg.push({x:i+1,y:slice.reduce((a,b)=>a+b,0)/slice.length*100});
+}
+
+new Chart(document.getElementById('c2'),{
+  type:'line',
+  data:{datasets:[
+    {data:phaseF1,borderColor:'rgba(29,158,117,0.3)',borderWidth:1,pointRadius:1.5,pointBackgroundColor:'rgba(29,158,117,0.5)',tension:0.1,parsing:false,label:'Raw'},
+    {data:movAvg,borderColor:'#1D9E75',borderWidth:2.5,pointRadius:0,tension:0.4,parsing:false,label:'5-round moving avg'},
+  ]},
+  options:{...defOpts,
+    plugins:{
+      legend:{display:false},
+      annotation:{}
+    },
+    scales:{
+      x:{type:'linear',min:1,max:50,ticks:{color:tickColor,stepSize:5},grid:{color:gridColor}},
+      y:{min:25,max:90,ticks:{color:tickColor,callback:v=>v.toFixed(0)+'%'},grid:{color:gridColor},title:{display:true,text:'Macro F1 %',color:tickColor,font:{size:11}}}
+    }
+  }
+});
+
+new Chart(document.getElementById('c3'),{
+  type:'line',
+  data:{datasets:[
+    {data:clientAcc.map((y,i)=>({x:i+1,y:y*100})),borderColor:'#378ADD',borderWidth:2,pointRadius:1.5,pointBackgroundColor:'#378ADD',tension:0.3,parsing:false},
+    {data:f1.map((y,i)=>({x:i+1,y:y*100})),borderColor:'#1D9E75',borderWidth:2,pointRadius:1.5,pointBackgroundColor:'#1D9E75',tension:0.3,parsing:false},
+  ]},
+  options:{...defOpts,scales:{
+    x:{type:'linear',min:1,max:50,ticks:{color:tickColor,stepSize:5},grid:{color:gridColor}},
+    y:{min:20,max:100,ticks:{color:tickColor,callback:v=>v.toFixed(0)+'%'},grid:{color:gridColor}}
+  }}
+});
+</script>

@@ -1,0 +1,92 @@
+
+<style>
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 18px;margin-bottom:10px}
+.card.danger{border-color:var(--color-border-danger)}
+.card.warn{border-color:var(--color-border-warning)}
+.card.ok{border-color:var(--color-border-success)}
+.tag{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
+.tag-d{background:var(--color-background-danger);color:var(--color-text-danger)}
+.tag-w{background:var(--color-background-warning);color:var(--color-text-warning)}
+.tag-s{background:var(--color-background-success);color:var(--color-text-success)}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.label{font-size:12px;color:var(--color-text-secondary);width:180px;flex-shrink:0}
+.val{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.bar-t{flex:1;height:8px;background:var(--color-background-secondary);border-radius:4px;overflow:hidden}
+.bar-f{height:100%;border-radius:4px}
+.body{font-size:13px;color:var(--color-text-secondary);line-height:1.6}
+.body strong{font-weight:500;color:var(--color-text-primary)}
+hr{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:14px 0}
+</style>
+<h2 class="sr-only">Diagnosis of two FL training runs: both plateau at Macro F1 ~0.83, root cause analysis</h2>
+<div style="padding:0.5rem 0 1.5rem">
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:16px">
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px">
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:2px">Run 1 best F1</div>
+    <div style="font-size:20px;font-weight:500;color:var(--color-text-primary)">0.8338</div>
+    <div style="font-size:11px;color:var(--color-text-secondary)">round 44 / 50</div>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px">
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:2px">Run 2 best F1</div>
+    <div style="font-size:20px;font-weight:500;color:var(--color-text-primary)">0.8320</div>
+    <div style="font-size:11px;color:var(--color-text-secondary)">round 56 / 60</div>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px">
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:2px">Paper target</div>
+    <div style="font-size:20px;font-weight:500;color:var(--color-text-info)">0.9551</div>
+    <div style="font-size:11px;color:var(--color-text-secondary)">Table 8, centralized</div>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px">
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:2px">Gap to target</div>
+    <div style="font-size:20px;font-weight:500;color:var(--color-text-danger)">−12.1 pp</div>
+    <div style="font-size:11px;color:var(--color-text-secondary)">not explained by FL overhead</div>
+  </div>
+</div>
+
+<div class="card danger">
+  <div class="row"><span class="tag tag-d">Root cause 1</span><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Each client sees only 3–4 of 8 classes</span></div>
+  <p class="body">The partition log shows every node holds exactly 4 classes. A node that never sees <strong>dos</strong> can only learn to classify it through FedAvg aggregation, but the FedProx proximal term is actively <em>preventing</em> the global dos signal from fully updating that node's weights. The proximal anchor pulls local weights toward the global checkpoint — which is the correct fix for IID drift, but here it fights the signal propagation that non-dos nodes need. When mu=0.10 (run 2 phase 3), the anchor is so tight that minority-class gradients from the 4 dos nodes barely move the global model.</p>
+</div>
+
+<div class="card danger">
+  <div class="row"><span class="tag tag-d">Root cause 2</span><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">36K samples over 12 nodes = ~3K each — too small for BiCNN-LSTM</span></div>
+  <p class="body">The paper achieved 0.9551 training the BiCNN-LSTM on the <strong>full 36K-sample dataset centrally</strong>. In the FL setup, each client trains on ~3K samples with only 3–4 classes visible. The BiCNN-LSTM has 76K parameters — roughly <strong>25 parameters per training sample per node</strong>. That ratio is far too high: the model is severely underfitted at the local level and FedAvg cannot compensate. The plateau at 0.83 is exactly where a 76K-parameter model saturates on 3K non-IID samples per client.</p>
+</div>
+
+<div class="card warn">
+  <div class="row"><span class="tag tag-w">Root cause 3</span><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">XGBoost baseline (0.9118) is worse than RF (0.9324)</span></div>
+  <p class="body">The XGBoost replacement made the centralized baseline weaker, not stronger. RF Macro F1 = 0.9324; XGBoost Macro F1 = 0.9118. The likely cause is that XGBoost with <code>learning_rate=0.05</code> and <code>max_depth=8</code> overfits the majority class (benign: 60.7% of samples) when sample weights are applied uniformly, whereas RF's class_weight='balanced' handles this natively. The centralized baseline should use the best available model — RF was already that.</p>
+</div>
+
+<div class="card warn">
+  <div class="row"><span class="tag tag-w">Root cause 4</span><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Round 2 F1 oscillation pattern is identical to run 1</span></div>
+  <p class="body">The LR and mu schedules reduced oscillation amplitude slightly (±0.015 vs ±0.02) but did not break the plateau. This confirms that the problem is not optimizer dynamics — it is the <strong>data regime</strong>. Tuning optimizer hyperparameters cannot fix insufficient per-node class coverage.</p>
+</div>
+
+<hr>
+
+<div class="card ok">
+  <div class="row"><span class="tag tag-s">Fix direction</span><span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Three targeted changes that address the actual causes</span></div>
+  <div class="row" style="margin-top:4px">
+    <div class="label">FIX A — Repartition</div>
+    <div class="val" style="font-size:12px">Use <strong>5 nodes</strong> (not 12), each with ~7.2K samples and all 8 classes. This is the NF3 minimum — sufficient for the FL argument, gives 2.4× more data per node, and guarantees every node trains on every class. Eliminates root cause 1 and 2 simultaneously.</div>
+  </div>
+  <div class="row">
+    <div class="label">FIX B — Restore RF baseline</div>
+    <div class="val" style="font-size:12px">Revert to RandomForest (F1=0.9324 > XGBoost 0.9118). The centralized baseline must be the strongest available model. RF was already that on this dataset.</div>
+  </div>
+  <div class="row">
+    <div class="label">FIX C — Reduce mu back to 0.01 fixed</div>
+    <div class="val" style="font-size:12px">With full-class 5-node partitions, client drift is no longer the dominant problem. Drop the mu schedule: keep mu=0.01 constant. The aggressive mu=0.10 in phase 3 of run 2 actively throttled minority-class gradient propagation.</div>
+  </div>
+</div>
+
+<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 16px;margin-top:8px">
+  <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Expected F1 improvement with FIX A alone</div>
+  <div class="row"><div class="label" style="font-size:11px">Current (12 nodes × 3K, 4 classes)</div><div class="bar-t"><div class="bar-f" style="width:83.2%;background:#E24B4A"></div></div><div class="val" style="font-size:12px">0.832</div></div>
+  <div class="row"><div class="label" style="font-size:11px">Expected (5 nodes × 7K, 8 classes)</div><div class="bar-t"><div class="bar-f" style="width:91%;background:#1D9E75"></div></div><div class="val" style="font-size:12px">~0.91+</div></div>
+  <div class="row"><div class="label" style="font-size:11px">Paper target (centralized, full data)</div><div class="bar-t"><div class="bar-f" style="width:95.51%;background:#185FA5"></div></div><div class="val" style="font-size:12px">0.9551</div></div>
+</div>
+
+</div>
