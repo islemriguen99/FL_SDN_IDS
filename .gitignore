@@ -1,0 +1,18 @@
+# Environments
+.venv/
+flwr_env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Data (VERY IMPORTANT)
+all_attack_benign_samples/
+processed_output/
+
+# Models (optional if heavy)
+models/*.pkl
+models/*.h5
+
+# VS Code
+.vscode/
